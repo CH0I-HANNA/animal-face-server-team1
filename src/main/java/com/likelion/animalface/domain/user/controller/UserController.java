@@ -1,6 +1,9 @@
 package com.likelion.animalface.domain.user.controller;
 
-import com.likelion.animalface.domain.user.dto.req.*;
+import com.likelion.animalface.domain.user.dto.req.FindIdReq;
+import com.likelion.animalface.domain.user.dto.req.LoginReq;
+import com.likelion.animalface.domain.user.dto.req.ReissueReq;
+import com.likelion.animalface.domain.user.dto.req.SignupReq;
 import com.likelion.animalface.domain.user.dto.res.FindIdRes;
 import com.likelion.animalface.domain.user.dto.res.LoginRes;
 import com.likelion.animalface.domain.user.service.UserService;
@@ -51,10 +54,4 @@ public class UserController {
         return ApiResponse.success(userService.findId(req));
     }
 
-    @Operation(summary = "임시 비밀번호 발급 (이메일 발송)")
-    @PostMapping("/temp-password")
-    public ApiResponse<Void> tempPassword(@RequestBody TempPasswordReq req) {
-        userService.sendTempPassword(req);
-        return ApiResponse.message("임시 비밀번호가 이메일로 발송되었습니다.");
-    }
 }

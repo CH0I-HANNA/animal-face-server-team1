@@ -37,7 +37,6 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/reissue",
                                 "/api/v1/auth/find-id",
-                                "/api/v1/auth/temp-password",
                                 "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html"
                         ).permitAll()
                         .anyRequest().authenticated()

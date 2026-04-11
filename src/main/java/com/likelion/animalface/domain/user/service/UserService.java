@@ -1,6 +1,9 @@
 package com.likelion.animalface.domain.user.service;
 
-import com.likelion.animalface.domain.user.dto.req.*;
+import com.likelion.animalface.domain.user.dto.req.FindIdReq;
+import com.likelion.animalface.domain.user.dto.req.LoginReq;
+import com.likelion.animalface.domain.user.dto.req.ReissueReq;
+import com.likelion.animalface.domain.user.dto.req.SignupReq;
 import com.likelion.animalface.domain.user.dto.res.FindIdRes;
 import com.likelion.animalface.domain.user.dto.res.LoginRes;
 import com.likelion.animalface.domain.user.entity.RefreshToken;
@@ -9,14 +12,11 @@ import com.likelion.animalface.domain.user.repository.RefreshTokenRepository;
 import com.likelion.animalface.domain.user.repository.UserRepository;
 import com.likelion.animalface.global.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * 인증 서비스 (/api/v1/auth)
@@ -30,7 +30,6 @@ public class UserService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
-    private final JavaMailSender mailSender;
 
     /** 회원가입 */
     @Transactional
@@ -106,19 +105,4 @@ public class UserService {
         return FindIdRes.of(user.getLoginId());
     }
 
-    /** 임시 비밀번호 발급 및 이메일 발송 */
-    @Transactional
-    public void sendTempPassword(TempPasswordReq req) {
-        User user = userRepository.findByLoginIdAndEmail(req.loginId(), req.email())
-                .orElseThrow(() -> new IllegalArgumentException("일치하는 회원 정보가 없습니다."));
-
-        String tempPassword = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-        user.updatePassword(passwordEncoder.encode(tempPassword));
-
-        SimpleMailMessage mail = new SimpleMailMessage();
-        mail.setTo(user.getEmail());
-        mail.setSubject("[AnimalFace] 임시 비밀번호 안내");
-        mail.setText("임시 비밀번호: " + tempPassword + "\n로그인 후 반드시 비밀번호를 변경해주세요.");
-        mailSender.send(mail);
-    }
 }
