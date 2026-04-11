@@ -30,8 +30,9 @@ public class StorageService {
     private String region;
 
     /** S3 Presigned PUT URL 발급 */
-    public PresignedUrlRes generatePresignedUrl(PresignedUrlReq req) {
-        String key = "uploads/" + UUID.randomUUID() + "/" + req.fileName();
+    public PresignedUrlRes generatePresignedUrl(Long userId, PresignedUrlReq req) {
+        // 경로: uploads/{userId}/{uuid}/{fileName} → 사용자별 파일 격리
+        String key = "uploads/" + userId + "/" + UUID.randomUUID() + "/" + req.fileName();
 
         PutObjectRequest objectRequest = PutObjectRequest.builder()
                 .bucket(bucket)

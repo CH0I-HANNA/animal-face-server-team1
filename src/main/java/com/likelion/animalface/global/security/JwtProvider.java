@@ -21,6 +21,12 @@ public class JwtProvider {
             @Value("${jwt.access-expiry}") long accessExpiry,
             @Value("${jwt.refresh-expiry}") long refreshExpiry
     ) {
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException(
+                    "JWT_SECRET은 최소 32바이트(256비트) 이상이어야 합니다. " +
+                    "현재 길이: " + secret.getBytes(StandardCharsets.UTF_8).length + "바이트"
+            );
+        }
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessExpiry = accessExpiry;
         this.refreshExpiry = refreshExpiry;

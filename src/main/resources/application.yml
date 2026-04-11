@@ -30,7 +30,7 @@ ai:
     url: http://localhost:8000
 
 jwt:
-  secret: ${JWT_SECRET:default-dev-secret-key-must-be-at-least-32-bytes}
+  secret: ${JWT_SECRET}
   access-expiry: 3600000       # 1시간 (ms)
   refresh-expiry: 1209600000   # 14일 (ms)
 

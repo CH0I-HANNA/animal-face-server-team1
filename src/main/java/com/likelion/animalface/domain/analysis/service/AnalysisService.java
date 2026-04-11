@@ -7,10 +7,12 @@ import com.likelion.animalface.domain.analysis.entity.AnimalType;
 import com.likelion.animalface.domain.analysis.repository.AnimalResultRepository;
 import com.likelion.animalface.domain.user.entity.User;
 import com.likelion.animalface.domain.user.repository.UserRepository;
+import com.likelion.animalface.global.exception.InvalidImageUrlException;
 import com.likelion.animalface.infra.ai.AiFeignClient;
 import com.likelion.animalface.infra.ai.dto.AiAnalyzeReq;
 import com.likelion.animalface.infra.ai.dto.AiAnalyzeRes;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,9 +30,18 @@ public class AnalysisService {
     private final UserRepository userRepository;
     private final AiFeignClient aiFeignClient;
 
+    /** SSRF 방지: 허용된 S3 버킷 도메인 prefix를 동적으로 구성 */
+    @Value("${cloud.aws.s3.bucket}")
+    private String bucket;
+
+    @Value("${cloud.aws.region.static}")
+    private String region;
+
     /** AI 분석 요청 후 결과 저장 */
     @Transactional
     public AnalysisRes analyze(Long userId, AnalyzeReq req) {
+        validateImageUrl(req.imageUrl());
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
@@ -39,7 +50,7 @@ public class AnalysisService {
         AnimalResult result = AnimalResult.builder()
                 .user(user)
                 .imageUrl(req.imageUrl())
-                .animalType(AnimalType.valueOf(aiRes.animalType().toUpperCase()))
+                .animalType(AnimalType.from(aiRes.animalType()))
                 .similarity(aiRes.similarity())
                 .build();
 
@@ -62,5 +73,20 @@ public class AnalysisService {
     public Page<AnalysisRes> getMy(Long userId, Pageable pageable) {
         return animalResultRepository.findByUserId(userId, pageable)
                 .map(AnalysisRes::from);
+    }
+
+    /**
+     * imageUrl이 자신의 S3 버킷에서 발급된 URL인지 검증합니다 (SSRF 방지).
+     * StorageService가 생성하는 URL 형식: https://{bucket}.s3.{region}.amazonaws.com/...
+     *
+     * @throws InvalidImageUrlException 허용되지 않은 도메인의 URL인 경우
+     */
+    private void validateImageUrl(String imageUrl) {
+        String allowedPrefix = String.format("https://%s.s3.%s.amazonaws.com/", bucket, region);
+        if (!imageUrl.startsWith(allowedPrefix)) {
+            throw new InvalidImageUrlException(
+                    "허용되지 않은 이미지 URL입니다. 반드시 Presigned URL로 업로드된 이미지를 사용해야 합니다."
+            );
+        }
     }
 }

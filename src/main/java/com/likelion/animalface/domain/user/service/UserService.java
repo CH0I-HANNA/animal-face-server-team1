@@ -12,11 +12,13 @@ import com.likelion.animalface.domain.user.repository.RefreshTokenRepository;
 import com.likelion.animalface.domain.user.repository.UserRepository;
 import com.likelion.animalface.global.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 /**
  * 인증 서비스 (/api/v1/auth)
@@ -30,6 +32,10 @@ public class UserService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+
+    /** application.yml의 jwt.refresh-expiry (ms)를 주입받아 DB 만료 시간 계산에 사용 */
+    @Value("${jwt.refresh-expiry}")
+    private long refreshExpiryMs;
 
     /** 회원가입 */
     @Transactional
@@ -56,13 +62,14 @@ public class UserService {
         String accessToken = jwtProvider.generateAccessToken(user.getId());
         String refreshToken = jwtProvider.generateRefreshToken(user.getId());
 
+        LocalDateTime expiresAt = refreshTokenExpiresAt();
         refreshTokenRepository.findByUserId(user.getId())
                 .ifPresentOrElse(
-                        rt -> rt.rotate(refreshToken, LocalDateTime.now().plusDays(14)),
+                        rt -> rt.rotate(refreshToken, expiresAt),
                         () -> refreshTokenRepository.save(RefreshToken.builder()
                                 .userId(user.getId())
                                 .token(refreshToken)
-                                .expiresAt(LocalDateTime.now().plusDays(14))
+                                .expiresAt(expiresAt)
                                 .build())
                 );
 
@@ -87,12 +94,13 @@ public class UserService {
         String newAccessToken = jwtProvider.generateAccessToken(userId);
         String newRefreshToken = jwtProvider.generateRefreshToken(userId);
 
-        saved.rotate(newRefreshToken, LocalDateTime.now().plusDays(14));
+        saved.rotate(newRefreshToken, refreshTokenExpiresAt());
 
         return LoginRes.of(newAccessToken, newRefreshToken);
     }
 
     /** 로그아웃 */
+
     @Transactional
     public void logout(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
@@ -105,4 +113,11 @@ public class UserService {
         return FindIdRes.of(user.getLoginId());
     }
 
+    /**
+     * application.yml의 jwt.refresh-expiry(ms) 기반으로 만료 시각을 계산합니다.
+     * DB의 expiresAt과 JWT 자체 만료 시각을 동일한 설정값에서 산출하여 정확성을 유지합니다.
+     */
+    private LocalDateTime refreshTokenExpiresAt() {
+        return LocalDateTime.now().plus(refreshExpiryMs, ChronoUnit.MILLIS);
+    }
 }
