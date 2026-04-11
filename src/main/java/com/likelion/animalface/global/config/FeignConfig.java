@@ -20,16 +20,17 @@ public class FeignConfig {
     }
 
     /**
-     * AI 서버 타임아웃 설정.
+     * AI 서버 타임아웃 및 리다이렉트 처리 설정.
      * - connectTimeout: AI 서버에 연결 시도 최대 시간
      * - readTimeout: AI 응답 대기 최대 시간 (얼굴 분석에 시간이 걸리므로 넉넉하게)
+     * - followRedirects: AI 서버의 3xx 응답을 Feign이 자동 추적하지 않도록 설정
      */
     @Bean
     public Request.Options requestOptions() {
         return new Request.Options(
                 3, TimeUnit.SECONDS,   // connectTimeout
                 30, TimeUnit.SECONDS,  // readTimeout (AI 분석 시간 고려)
-                false                  // followRedirects (false로 고정하여 SSRF 우회 공격 차단)
+                false                  // followRedirects (불필요한 리다이렉트 자동 추적 방지)
         );
     }
 
