@@ -45,12 +45,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(e.getMessage()));
     }
 
-    /** AI 서버 연결 타임아웃 */
+    /** AI 서버 연결 실패 (Timeout, Connection Refused, DNS 등 포함) */
     @ExceptionHandler(RetryableException.class)
-    public ResponseEntity<ApiResponse<String>> handleFeignTimeout(RetryableException e) {
+    public ResponseEntity<ApiResponse<String>> handleFeignRetryable(RetryableException e) {
         return ResponseEntity
                 .status(HttpStatus.GATEWAY_TIMEOUT)  // 504
-                .body(ApiResponse.error("AI 서버 응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요."));
+                .body(ApiResponse.error("AI 서버 통신 실패 (응답 지연 또는 연결 불가). 잠시 후 다시 시도해주세요."));
     }
 
     @ExceptionHandler(AiResponseParseException.class)

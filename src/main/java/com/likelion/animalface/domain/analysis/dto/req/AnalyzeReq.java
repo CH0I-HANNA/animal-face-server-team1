@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Pattern;
 public record AnalyzeReq(
         @Schema(description = "분석할 이미지 URL", example = "https://bucket.s3.amazonaws.com/image.jpg")
         @NotBlank(message = "이미지 URL은 필수입니다.")
-        @Pattern(regexp = "^https?://.*", message = "imageUrl은 http 또는 https로 시작해야 합니다.")
+        @Pattern(regexp = "^https://.*", message = "imageUrl은 https로 시작하는 URL이어야 합니다.")
         String imageUrl
 ) {
 }

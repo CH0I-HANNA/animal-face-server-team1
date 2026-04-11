@@ -29,7 +29,7 @@ public class FeignConfig {
         return new Request.Options(
                 3, TimeUnit.SECONDS,   // connectTimeout
                 30, TimeUnit.SECONDS,  // readTimeout (AI 분석 시간 고려)
-                true                   // followRedirects
+                false                  // followRedirects (false로 고정하여 SSRF 우회 공격 차단)
         );
     }
 

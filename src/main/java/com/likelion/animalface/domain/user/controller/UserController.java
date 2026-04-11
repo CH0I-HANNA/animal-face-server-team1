@@ -39,7 +39,7 @@ public class UserController {
 
     @Operation(summary = "토큰 재발급 (Rotation)")
     @PostMapping("/reissue")
-    public ApiResponse<LoginRes> reissue(@RequestBody ReissueReq req) {
+    public ApiResponse<LoginRes> reissue(@Valid @RequestBody ReissueReq req) {
         return ApiResponse.success(userService.reissue(req));
     }
 
@@ -52,7 +52,7 @@ public class UserController {
 
     @Operation(summary = "아이디 찾기")
     @PostMapping("/find-id")
-    public ApiResponse<FindIdRes> findId(@RequestBody FindIdReq req) {
+    public ApiResponse<FindIdRes> findId(@Valid @RequestBody FindIdReq req) {
         return ApiResponse.success(userService.findId(req));
     }
 

@@ -13,8 +13,8 @@ public record PresignedUrlReq(
         @Schema(description = "파일 Content-Type", example = "image/jpeg")
         @NotBlank(message = "Content-Type은 필수입니다.")
         @Pattern(
-                regexp = "^image/(jpeg|png|webp|gif)$",
-                message = "이미지 파일만 업로드 가능합니다. (jpeg, png, webp, gif)"
+                regexp = "(?i)^image/(jpeg|jpg|png|webp|gif)$",
+                message = "이미지 파일만 업로드 가능합니다. (jpeg, jpg, png, webp, gif)"
         )
         String contentType
 ) {

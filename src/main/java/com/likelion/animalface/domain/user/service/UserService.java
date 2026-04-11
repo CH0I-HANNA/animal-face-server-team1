@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 /**
  * 인증 서비스 (/api/v1/auth)
@@ -114,9 +115,9 @@ public class UserService {
 
     /**
      * application.yml의 jwt.refresh-expiry(ms) 기반으로 만료 시각을 계산합니다.
-     * DB의 expiresAt과 JWT 자체 만료 시각을 동일한 설정값에서 산출하여 일관성을 유지합니다.
+     * DB의 expiresAt과 JWT 자체 만료 시각을 동일한 설정값에서 산출하여 정확성을 유지합니다.
      */
     private LocalDateTime refreshTokenExpiresAt() {
-        return LocalDateTime.now().plusSeconds(refreshExpiryMs / 1000);
+        return LocalDateTime.now().plus(refreshExpiryMs, ChronoUnit.MILLIS);
     }
 }
