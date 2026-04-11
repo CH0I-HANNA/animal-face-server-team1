@@ -12,7 +12,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 @Tag(name = "Analysis", description = "동물상 분석 API")
 @RestController
@@ -25,7 +28,7 @@ public class AnalysisController {
     @Operation(summary = "동물상 분석", description = "이미지 URL을 AI 서버로 전달하여 분석 결과를 저장합니다.")
     @PostMapping
     public ApiResponse<AnalysisRes> analyze(@AuthenticationPrincipal Long userId,
-                                             @RequestBody AnalyzeReq req) {
+                                             @Valid @RequestBody AnalyzeReq req) {
         return ApiResponse.success(analysisService.analyze(userId, req));
     }
 

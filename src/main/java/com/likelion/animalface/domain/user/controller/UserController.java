@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 @Tag(name = "Auth", description = "인증 API")
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -24,14 +26,14 @@ public class UserController {
 
     @Operation(summary = "회원가입")
     @PostMapping("/signup")
-    public ApiResponse<Void> signup(@RequestBody SignupReq req) {
+    public ApiResponse<Void> signup(@Valid @RequestBody SignupReq req) {
         userService.signup(req);
         return ApiResponse.message("회원가입이 완료되었습니다.");
     }
 
     @Operation(summary = "로그인")
     @PostMapping("/login")
-    public ApiResponse<LoginRes> login(@RequestBody LoginReq req) {
+    public ApiResponse<LoginRes> login(@Valid @RequestBody LoginReq req) {
         return ApiResponse.success(userService.login(req));
     }
 
