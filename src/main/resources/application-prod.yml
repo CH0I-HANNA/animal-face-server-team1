@@ -10,3 +10,6 @@ spring:
 logging:
   level:
     org.hibernate.orm.jdbc.bind: info
+
+server:
+  forward-headers-strategy: framework
