@@ -1,7 +1,8 @@
 package com.likelion.animalface.infra.ai.dto;
 
+import java.util.Map;
+
 public record AiAnalyzeRes(
-        String animalType,
-        Double similarity
+        Map<String, Double> similarities
 ) {
 }

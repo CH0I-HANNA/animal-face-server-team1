@@ -33,4 +33,16 @@ public class AnimalResult extends BaseTimeEntity {
 
     @Column(nullable = false)
     private Double similarity;
+
+    @Column(nullable = false)
+    private Double catSimilarity;
+
+    @Column(nullable = false)
+    private Double dogSimilarity;
+
+    @Column(nullable = false)
+    private Double foxSimilarity;
+
+    @Column(nullable = false)
+    private Double bearSimilarity;
 }
