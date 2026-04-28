@@ -7,6 +7,7 @@ import com.likelion.animalface.domain.analysis.entity.AnimalType;
 import com.likelion.animalface.domain.analysis.repository.AnimalResultRepository;
 import com.likelion.animalface.domain.user.entity.User;
 import com.likelion.animalface.domain.user.repository.UserRepository;
+import com.likelion.animalface.global.exception.AiResponseParseException;
 import com.likelion.animalface.global.exception.InvalidImageUrlException;
 import com.likelion.animalface.infra.ai.AiFeignClient;
 import com.likelion.animalface.infra.ai.dto.AiAnalyzeReq;
@@ -17,6 +18,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 /**
  * 분석 서비스 (/api/v1/analysis)
@@ -46,12 +49,23 @@ public class AnalysisService {
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
         AiAnalyzeRes aiRes = aiFeignClient.analyze(new AiAnalyzeReq(req.imageUrl()));
+        Map<String, Double> similarities = aiRes.similarities();
+
+        validateSimilarities(similarities);
+
+        Map.Entry<String, Double> top = similarities.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .orElseThrow(() -> new AiResponseParseException("AI 서버 유사도 결과가 비어 있습니다."));
 
         AnimalResult result = AnimalResult.builder()
                 .user(user)
                 .imageUrl(req.imageUrl())
-                .animalType(AnimalType.from(aiRes.animalType()))
-                .similarity(aiRes.similarity())
+                .animalType(AnimalType.from(top.getKey()))
+                .similarity(top.getValue())
+                .catSimilarity(similarities.getOrDefault(AnimalType.CAT.name(), 0.0))
+                .dogSimilarity(similarities.getOrDefault(AnimalType.DOG.name(), 0.0))
+                .foxSimilarity(similarities.getOrDefault(AnimalType.FOX.name(), 0.0))
+                .bearSimilarity(similarities.getOrDefault(AnimalType.BEAR.name(), 0.0))
                 .build();
 
         return AnalysisRes.from(animalResultRepository.save(result));
@@ -73,6 +87,12 @@ public class AnalysisService {
     public Page<AnalysisRes> getMy(Long userId, Pageable pageable) {
         return animalResultRepository.findByUserId(userId, pageable)
                 .map(AnalysisRes::from);
+    }
+
+    private void validateSimilarities(Map<String, Double> similarities) {
+        if (similarities == null || similarities.isEmpty()) {
+            throw new AiResponseParseException("AI 서버가 유사도 결과를 반환하지 않았습니다.");
+        }
     }
 
     /**

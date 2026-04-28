@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,6 +52,9 @@ class AnalysisServiceTest {
     private static final String VALID_URL =
             "https://my-bucket.s3.ap-northeast-2.amazonaws.com/images/test.jpg";
 
+    private static final Map<String, Double> SAMPLE_SIMILARITIES =
+            Map.of("CAT", 88.0, "DOG", 7.0, "FOX", 3.0, "BEAR", 2.0);
+
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(analysisService, "bucket", BUCKET);
@@ -61,16 +65,40 @@ class AnalysisServiceTest {
     void 분석_성공() {
         User user = User.builder().id(1L).loginId("user1").password("pw").nickname("nick").email("a@b.com").build();
         AnimalResult saved = AnimalResult.builder()
-                .id(10L).user(user).imageUrl(VALID_URL).animalType(AnimalType.CAT).similarity(88.0).build();
+                .id(10L).user(user).imageUrl(VALID_URL)
+                .animalType(AnimalType.CAT).similarity(88.0)
+                .catSimilarity(88.0).dogSimilarity(7.0).foxSimilarity(3.0).bearSimilarity(2.0)
+                .build();
 
         given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(aiFeignClient.analyze(any(AiAnalyzeReq.class))).willReturn(new AiAnalyzeRes("CAT", 88.0));
+        given(aiFeignClient.analyze(any(AiAnalyzeReq.class))).willReturn(new AiAnalyzeRes(SAMPLE_SIMILARITIES));
         given(animalResultRepository.save(any())).willReturn(saved);
 
         AnalysisRes res = analysisService.analyze(1L, new AnalyzeReq(VALID_URL));
 
         assertThat(res.animalType()).isEqualTo("CAT");
         assertThat(res.similarity()).isEqualTo(88.0);
+        assertThat(res.allSimilarities()).containsKeys("CAT", "DOG", "FOX", "BEAR");
+    }
+
+    @Test
+    void 가장_높은_확률_동물이_대표로_선택된다() {
+        User user = User.builder().id(1L).loginId("user1").password("pw").nickname("nick").email("a@b.com").build();
+        Map<String, Double> dogTopSimilarities = Map.of("CAT", 10.0, "DOG", 75.0, "FOX", 9.0, "BEAR", 6.0);
+        AnimalResult saved = AnimalResult.builder()
+                .id(11L).user(user).imageUrl(VALID_URL)
+                .animalType(AnimalType.DOG).similarity(75.0)
+                .catSimilarity(10.0).dogSimilarity(75.0).foxSimilarity(9.0).bearSimilarity(6.0)
+                .build();
+
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(aiFeignClient.analyze(any(AiAnalyzeReq.class))).willReturn(new AiAnalyzeRes(dogTopSimilarities));
+        given(animalResultRepository.save(any())).willReturn(saved);
+
+        AnalysisRes res = analysisService.analyze(1L, new AnalyzeReq(VALID_URL));
+
+        assertThat(res.animalType()).isEqualTo("DOG");
+        assertThat(res.similarity()).isEqualTo(75.0);
     }
 
     @Test
@@ -94,7 +122,10 @@ class AnalysisServiceTest {
     void ID로_분석결과_조회_성공() {
         User user = User.builder().id(1L).loginId("user1").password("pw").nickname("nick").email("a@b.com").build();
         AnimalResult result = AnimalResult.builder()
-                .id(10L).user(user).imageUrl(VALID_URL).animalType(AnimalType.DOG).similarity(75.0).build();
+                .id(10L).user(user).imageUrl(VALID_URL)
+                .animalType(AnimalType.DOG).similarity(75.0)
+                .catSimilarity(10.0).dogSimilarity(75.0).foxSimilarity(9.0).bearSimilarity(6.0)
+                .build();
 
         given(animalResultRepository.findById(10L)).willReturn(Optional.of(result));
 
@@ -117,7 +148,10 @@ class AnalysisServiceTest {
     void 다른_유저의_분석결과_조회시_예외발생() {
         User owner = User.builder().id(1L).loginId("owner").password("pw").nickname("nick").email("a@b.com").build();
         AnimalResult result = AnimalResult.builder()
-                .id(10L).user(owner).imageUrl(VALID_URL).animalType(AnimalType.FOX).similarity(60.0).build();
+                .id(10L).user(owner).imageUrl(VALID_URL)
+                .animalType(AnimalType.FOX).similarity(60.0)
+                .catSimilarity(15.0).dogSimilarity(10.0).foxSimilarity(60.0).bearSimilarity(15.0)
+                .build();
 
         given(animalResultRepository.findById(10L)).willReturn(Optional.of(result));
 
@@ -129,8 +163,14 @@ class AnalysisServiceTest {
     @Test
     void 내_분석기록_목록_페이지네이션() {
         User user = User.builder().id(1L).loginId("user1").password("pw").nickname("nick").email("a@b.com").build();
-        AnimalResult r1 = AnimalResult.builder().id(1L).user(user).imageUrl(VALID_URL).animalType(AnimalType.CAT).similarity(80.0).build();
-        AnimalResult r2 = AnimalResult.builder().id(2L).user(user).imageUrl(VALID_URL).animalType(AnimalType.BEAR).similarity(70.0).build();
+        AnimalResult r1 = AnimalResult.builder().id(1L).user(user).imageUrl(VALID_URL)
+                .animalType(AnimalType.CAT).similarity(80.0)
+                .catSimilarity(80.0).dogSimilarity(10.0).foxSimilarity(6.0).bearSimilarity(4.0)
+                .build();
+        AnimalResult r2 = AnimalResult.builder().id(2L).user(user).imageUrl(VALID_URL)
+                .animalType(AnimalType.BEAR).similarity(70.0)
+                .catSimilarity(10.0).dogSimilarity(12.0).foxSimilarity(8.0).bearSimilarity(70.0)
+                .build();
 
         PageRequest pageable = PageRequest.of(0, 10);
         given(animalResultRepository.findByUserId(1L, pageable))
