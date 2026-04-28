@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: ${PORT:8081}
 
 spring:
   profiles:
@@ -27,7 +27,7 @@ logging:
 
 ai:
   server:
-    url: http://localhost:8000
+    url: ${AI_SERVER_URL:http://localhost:8000}
 
 jwt:
   secret: ${JWT_SECRET}
