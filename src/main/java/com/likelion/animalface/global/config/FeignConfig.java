@@ -3,6 +3,7 @@ package com.likelion.animalface.global.config;
 import com.likelion.animalface.global.exception.AiServerException;
 import feign.Logger;
 import feign.Request;
+import feign.RequestInterceptor;
 import feign.Response;
 import feign.codec.ErrorDecoder;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +18,12 @@ public class FeignConfig {
     @Bean
     public Logger.Level feignLoggerLevel() {
         return Logger.Level.BASIC;
+    }
+
+    @Bean
+    public RequestInterceptor ngrokSkipInterceptor() {
+        return requestTemplate ->
+                requestTemplate.header("ngrok-skip-browser-warning", "true");
     }
 
     /**

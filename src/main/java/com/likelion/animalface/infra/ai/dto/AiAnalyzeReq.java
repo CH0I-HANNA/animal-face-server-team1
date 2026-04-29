@@ -1,4 +1,10 @@
 package com.likelion.animalface.infra.ai.dto;
 
-public record AiAnalyzeReq(String imageUrl) {
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public record AiAnalyzeReq(
+        @JsonProperty("image_url")
+        String imageUrl
+) {
 }
