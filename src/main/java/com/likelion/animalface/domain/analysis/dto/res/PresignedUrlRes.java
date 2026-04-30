@@ -8,7 +8,7 @@ public record PresignedUrlRes(
         String presignedUrl,
 
         @Schema(description = "업로드 후 접근 가능한 파일 URL")
-        String fileUrl
+        String imageUrl
 ) {
     public static PresignedUrlRes of(String presignedUrl, String fileUrl) {
         return new PresignedUrlRes(presignedUrl, fileUrl);
